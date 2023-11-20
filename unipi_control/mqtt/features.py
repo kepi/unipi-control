@@ -59,14 +59,14 @@ class BaseFeaturesMqttPlugin:
             await asyncio.sleep(sleep)
 
 
-class NeuronFeaturesMqttPlugin(BaseFeaturesMqttPlugin):
+class UnipiFeaturesMqttPlugin(BaseFeaturesMqttPlugin):
     """Provide features control as MQTT commands."""
 
     subscribe_feature_types: ClassVar[List[str]] = ["DO", "RO"]
     publish_feature_types: ClassVar[List[str]] = ["DI", "DO", "RO"]
     scan_interval: float = 25e-3
 
-    async def init_tasks(self, stack: AsyncExitStack, tasks: Set[Task]) -> None:
+    async def _init_tasks(self, scan_type, hardware_type, stack: AsyncExitStack, tasks: Set[Task]) -> None:
         """Initialize MQTT tasks for subscribe and publish MQTT topics.
 
         Parameters
@@ -78,7 +78,10 @@ class NeuronFeaturesMqttPlugin(BaseFeaturesMqttPlugin):
 
         """
         for feature in self.neuron.features.by_feature_types(self.subscribe_feature_types):
-            if isinstance(feature, (DigitalOutput, Relay)):
+            if (
+                isinstance(feature, (DigitalOutput, Relay))
+                and feature.hardware.definition.hardware_type == hardware_type
+            ):
                 topic: str = f"{feature.topic}/set"
 
                 manager = self.mqtt_client.filtered_messages(topic)
@@ -92,8 +95,8 @@ class NeuronFeaturesMqttPlugin(BaseFeaturesMqttPlugin):
 
         task: Task = asyncio.create_task(
             self._publish(
-                scan_type="tcp",
-                hardware_types=[HardwareType.NEURON],
+                scan_type=scan_type,
+                hardware_types=[hardware_type],
                 feature_types=self.publish_feature_types,
                 sleep=self.scan_interval,
             )
@@ -118,6 +121,16 @@ class NeuronFeaturesMqttPlugin(BaseFeaturesMqttPlugin):
                     level=LOG_LEVEL["info"],
                     msg=LOG_MQTT_SUBSCRIBE % (topic, value),
                 )
+
+
+class NeuronFeaturesMqttPlugin(UnipiFeaturesMqttPlugin):
+    async def init_tasks(self, stack: AsyncExitStack, tasks: Set[Task]) -> None:
+        await self._init_tasks("tcp", HardwareType.NEURON, stack, tasks)
+
+
+class UnipiExtensionFeaturesMqttPlugin(UnipiFeaturesMqttPlugin):
+    async def init_tasks(self, stack: AsyncExitStack, tasks: Set[Task]) -> None:
+        await self._init_tasks("serial", HardwareType.EXTENSION, stack, tasks)
 
 
 class MeterFeaturesMqttPlugin(BaseFeaturesMqttPlugin):

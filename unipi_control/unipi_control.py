@@ -35,6 +35,7 @@ from unipi_control.mqtt.discovery.sensors import HassSensorsMqttPlugin
 from unipi_control.mqtt.discovery.switches import HassSwitchesMqttPlugin
 from unipi_control.mqtt.features import MeterFeaturesMqttPlugin
 from unipi_control.mqtt.features import NeuronFeaturesMqttPlugin
+from unipi_control.mqtt.features import UnipiExtensionFeaturesMqttPlugin
 from unipi_control.mqtt.integrations.covers import CoversMqttPlugin
 from unipi_control.neuron import Neuron
 from unipi_control.version import __version__
@@ -58,6 +59,7 @@ class UnipiControl:
         stack.push_async_callback(self._cancel_tasks, tasks)
 
         await NeuronFeaturesMqttPlugin(self.neuron, mqtt_client).init_tasks(stack, tasks)
+        await UnipiExtensionFeaturesMqttPlugin(self.neuron, mqtt_client).init_tasks(stack, tasks)
         await MeterFeaturesMqttPlugin(self.neuron, mqtt_client).init_tasks(tasks)
 
         covers = CoverMap(self.config, self.neuron.features)

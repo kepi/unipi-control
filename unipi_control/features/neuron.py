@@ -58,6 +58,17 @@ class NeuronFeature:
         )[0]
         self.saved_value: Optional[Union[float, int]] = None
 
+        # Adjust to Main unit vs Extension differencies
+        self.modbus_client = self.modbus.client.tcp
+        self.device_name: str = self.config.device_info.name
+
+        if self.hardware.definition.hardware_type == "Extension":
+            self.modbus_client = self.modbus.client.serial
+            if self.hardware.definition.device_name:
+                self.device_name = self.hardware.definition.device_name
+            else:
+                self.device_name = f"{self.config.device_info.name} Ext{self.hardware.definition.unit}"
+
     def __repr__(self) -> str:
         return self.base_friendly_name
 
@@ -120,7 +131,7 @@ class NeuronFeature:
     @cached_property
     def topic(self) -> str:
         """Return Unique name for the MQTT topic."""
-        return f"{slugify(self.config.device_info.name)}/{self.hardware.feature_type.topic_name}/{self.feature_id}"
+        return f"{slugify(self.device_name)}/{self.hardware.feature_type.topic_name}/{self.feature_id}"
 
     @property
     def payload(self) -> str:
@@ -171,7 +182,7 @@ class Relay(NeuronFeature):
             "slave": 0,
         }
 
-        return await check_modbus_call(self.modbus.client.tcp.write_coil, data)
+        return await check_modbus_call(self.modbus_client.write_coil, data)
 
 
 class DigitalOutput(NeuronFeature):
@@ -196,7 +207,7 @@ class DigitalOutput(NeuronFeature):
             "slave": 0,
         }
 
-        return await check_modbus_call(self.modbus.client.tcp.write_coil, data)
+        return await check_modbus_call(self.modbus_client.write_coil, data)
 
 
 class DigitalInput(NeuronFeature):
@@ -225,4 +236,4 @@ class Led(NeuronFeature):
             "slave": 0,
         }
 
-        return await check_modbus_call(self.modbus.client.tcp.write_coil, data)
+        return await check_modbus_call(self.modbus_client.write_coil, data)
