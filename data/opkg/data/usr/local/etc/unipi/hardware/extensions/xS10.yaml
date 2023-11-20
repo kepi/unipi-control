@@ -12,6 +12,7 @@ modbus_features:
     count: 16
     major_group: 1
     val_reg: 0
+    val_coil: 8
   - feature_type: RO
     count: 8
     major_group: 1
@@ -20,5 +21,5 @@ modbus_features:
   - feature_type: LED
     major_group: 1
     count: 4
-    val_coil: 24
     val_reg: 39
+    val_coil: 24
