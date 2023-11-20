@@ -40,7 +40,7 @@ class BaseFeaturesMqttPlugin:
             await self.neuron.modbus_cache_data.scan(scan_type, hardware_types)
 
             for feature in self.neuron.features.by_feature_types(feature_types):
-                if feature.changed:
+                if feature.changed and feature.hardware.definition.hardware_type in hardware_types:
                     topic: str = f"{feature.topic}/get"
                     await self.mqtt_client.publish(topic=topic, payload=feature.payload, qos=1, retain=True)
 
