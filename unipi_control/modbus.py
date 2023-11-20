@@ -86,12 +86,18 @@ class ModbusCacheData:
         if scan_type == "tcp":
             response = await check_modbus_call(self.modbus_client.tcp.read_input_registers, data)
         elif scan_type == "serial":
+            print(scan_type, data, end="")
             response = await check_modbus_call(self.modbus_client.serial.read_input_registers, data)
 
         if response:
+            if scan_type == "serial":
+                print(" - GOT response")
             register: List[int] = response.registers
             for index in range(data["count"]):
                 self.data[definition.unit][data["address"] + index] = register[index]
+
+        else:
+            print(" - FAILED")
 
     async def scan(self, scan_type: str, hardware_types: List[str]) -> None:
         """Read modbus register blocks and cache the response."""
